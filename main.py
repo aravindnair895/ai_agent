@@ -26,7 +26,7 @@ class Tradesignal(BaseModel):
     stop_loss: float
     take_profit: float
     risk_reward: float
-    confidance: float
+    confidence: float
 
 
 # llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
@@ -92,9 +92,9 @@ try:
         print("No trade today - stay safe!")
     else:
         structured_response = parser.parse(json_text)
-        
-    # structured_response = parser.parse(raw_response.get("output")[0]["text"])
-    print(structured_response)
+        # structured_response = parser.parse(raw_response.get("output")[0]["text"])
+        print(structured_response)
+            
 
 except Exception as e:
     print("Failed to parse response:", e)
