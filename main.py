@@ -10,8 +10,28 @@ from tools import duckduckgo_search, get_price_data, calculated_rsi
 import re
 # from tools import search_tool
 
+def calculate_position_size(account_balance, risk_percent, entry, stop_loss,pair):
+    risk_amount = account_balance * (risk_percent / 100)
+    if "JPY" in pair:
+        pip_size = 0.01
+    else:
+        pip_size = 0.0001
+    
+    stop_loss_pips = abs(entry - stop_loss) / pip_size
+
+    if stop_loss_pips == 0:
+        return 0  # Avoid division by zero
+    
+    pip_value_per_lot = 10  # Standard pip value for a lot
+
+    position_size = risk_amount / (stop_loss_pips * pip_value_per_lot)
+    return round(position_size, 4)
 
 load_dotenv()
+
+ACCOUNT_BALANCE = 10000
+RISK_PERCENT = 1
+ACCOUNT_CURRENCY = "INR"
 
 # class Responsemessage(BaseModel):
 #     topic: str
@@ -27,25 +47,48 @@ class Tradesignal(BaseModel):
     take_profit: float
     risk_reward: float
     confidence: float
+    position_size: float = 0
+    risk_percent: float = 0
+    account_currency: str = ""
 
 
 # llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
 # llm2 = ChatOpenAI()
-llm3 = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+llm3 = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview")
 
 parser = PydanticOutputParser(pydantic_object=Tradesignal)
 
 prompt = ChatPromptTemplate.from_messages([
-    ("system", """You are a forex trading assistant.
+    ("system", """
+    You are a professional forex trading assistant.
 
-    Use tools to analyze market data.
+    Use tools (price + RSI) to analyze market.
 
     Rules:
-    - Always provide structured output
-    - Include entry, stop_loss, take_profit
+    - RSI > 60 → BUY
+    - RSI < 40 → SELL
+    - Otherwise → NO TRADE
     - Risk reward must be >= 1.5
-    - If unsure, return "NO TRADE"
-      \n{format_instructions}""",),
+     
+     If user explicitly asks for relaxed conditions,
+    you may use:
+    - RSI > 55 → BUY
+    - RSI < 45 → SELL
+
+    If there is NO TRADE, return exactly:
+    NO TRADE
+
+    If there is a valid trade, return ONLY JSON:
+    {{
+    "pair": "...",
+    "bias": "BUY or SELL",
+    "entry": float,
+    "stop_loss": float,
+    "take_profit": float,
+    "risk_reward": float,
+    "confidence": float
+    }}
+    """),
     ("placeholder","{chat_history}"),
     ("human","{query}"),
     ("placeholder","{agent_scratchpad}"),]).partial(format_instructions=parser.get_format_instructions())
@@ -82,18 +125,33 @@ try:
         raise ValueError("Unexpected output format")
     
     cleaned = re.sub(r"```json|```","", full_text).strip()
-    start = cleaned.find("{")
-    end = cleaned.rfind("}") + 1
-    json_text = cleaned[start:end]
 
-    print("Extracted JSON:", json_text)
+    print("Raw output:\n", cleaned)
 
     if "NO TRADE" in cleaned:
         print("No trade today - stay safe!")
+
     else:
+        start = cleaned.find("{")
+        end = cleaned.rfind("}") + 1
+        json_text = cleaned[start:end]
+
+        print("Extracted JSON:", json_text)
+
         structured_response = parser.parse(json_text)
         # structured_response = parser.parse(raw_response.get("output")[0]["text"])
-        print(structured_response)
+        position_size = calculate_position_size(
+            ACCOUNT_BALANCE,
+            RISK_PERCENT,
+            structured_response.entry,
+            structured_response.stop_loss,
+            structured_response.pair
+            )
+        structured_response.position_size = position_size
+        structured_response.risk_percent = RISK_PERCENT
+        structured_response.account_currency = ACCOUNT_CURRENCY
+
+        print("\n Final Trade:\n ", structured_response)
             
 
 except Exception as e:
