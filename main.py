@@ -88,7 +88,11 @@ try:
 
     print("Extracted JSON:", json_text)
 
-    structured_response = parser.parse(json_text)
+    if "NO TRADE" in cleaned:
+        print("No trade today - stay safe!")
+    else:
+        structured_response = parser.parse(json_text)
+        
     # structured_response = parser.parse(raw_response.get("output")[0]["text"])
     print(structured_response)
 
