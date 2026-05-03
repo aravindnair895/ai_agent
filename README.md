@@ -30,6 +30,7 @@ ai_agent/
 ├── main.py              # Entry point
 ├── tools.py             # Custom tools (data fetching, analysis)
 ├── requirements.txt     # Dependencies
+├── .env                 # secret data (API keys)
 ├── .gitignore
 └── README.md
 ```
