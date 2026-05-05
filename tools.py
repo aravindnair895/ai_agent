@@ -21,7 +21,7 @@ def duckduckgo_search(query: str) -> str:
 @tool
 def get_price_data(symbol: str) -> str:
     """Get latest price data of a forex pair like EURUSD=X"""
-    data = yf.download(symbol, period="1d", interval="5m")
+    data = yf.download(symbol, period="5d", interval="5m")
     return data.tail(1).to_string()
 
 @tool

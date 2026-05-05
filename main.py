@@ -93,7 +93,7 @@ prompt = ChatPromptTemplate.from_messages([
     ("human","{query}"),
     ("placeholder","{agent_scratchpad}"),]).partial(format_instructions=parser.get_format_instructions())
 
-tools = [duckduckgo_search, get_price_data, calculated_rsi]
+tools = [get_price_data, calculated_rsi]
 agent = create_tool_calling_agent(
     llm=llm3, 
     tools=tools, 
