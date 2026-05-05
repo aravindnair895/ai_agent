@@ -37,3 +37,4 @@ def calculated_rsi(symbol: str) -> str:
     if hasattr(latest_rsi, 'values'):
         latest_rsi = latest_rsi.values[0]  # Convert to native Python float if it's a numpy type
     return f"The latest RSI for {symbol} is {latest_rsi:.2f}"
+

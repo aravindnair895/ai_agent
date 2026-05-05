@@ -29,9 +29,9 @@ def calculate_position_size(account_balance, risk_percent, entry, stop_loss,pair
 
 load_dotenv()
 
-ACCOUNT_BALANCE = 10000
+ACCOUNT_BALANCE = 10026
 RISK_PERCENT = 1
-ACCOUNT_CURRENCY = "INR"
+ACCOUNT_CURRENCY = "USD"
 
 # class Responsemessage(BaseModel):
 #     topic: str
@@ -55,6 +55,7 @@ class Tradesignal(BaseModel):
 # llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
 # llm2 = ChatOpenAI()
 llm3 = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview")
+# llm3 = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 parser = PydanticOutputParser(pydantic_object=Tradesignal)
 
@@ -126,7 +127,7 @@ try:
     
     cleaned = re.sub(r"```json|```","", full_text).strip()
 
-    print("Raw output:\n", cleaned)
+    # print("Raw output:\n", cleaned)
 
     if "NO TRADE" in cleaned:
         print("No trade today - stay safe!")
@@ -139,7 +140,7 @@ try:
         print("Extracted JSON:", json_text)
 
         structured_response = parser.parse(json_text)
-        # structured_response = parser.parse(raw_response.get("output")[0]["text"])
+        # structured_response = parser.parse(raw_response.get("output")[safest tra0]["text"])
         position_size = calculate_position_size(
             ACCOUNT_BALANCE,
             RISK_PERCENT,
