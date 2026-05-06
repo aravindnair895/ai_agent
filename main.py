@@ -6,32 +6,17 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_classic.agents import AgentExecutor, create_tool_calling_agent
-from tools import duckduckgo_search, get_price_data, calculated_rsi 
+from tools import get_price_data, calculated_rsi
+from tools import extract_values, decide_trade, detect_symbol, get_market_news, extract_pairs_from_news,run_scanner
 import re
 # from tools import search_tool
 
-def calculate_position_size(account_balance, risk_percent, entry, stop_loss,pair):
-    risk_amount = account_balance * (risk_percent / 100)
-    if "JPY" in pair:
-        pip_size = 0.01
-    else:
-        pip_size = 0.0001
-    
-    stop_loss_pips = abs(entry - stop_loss) / pip_size
-
-    if stop_loss_pips == 0:
-        return 0  # Avoid division by zero
-    
-    pip_value_per_lot = 10  # Standard pip value for a lot
-
-    position_size = risk_amount / (stop_loss_pips * pip_value_per_lot)
-    return round(position_size, 4)
 
 load_dotenv()
 
-ACCOUNT_BALANCE = 10026
-RISK_PERCENT = 1
-ACCOUNT_CURRENCY = "USD"
+# ACCOUNT_BALANCE = 10026
+# RISK_PERCENT = 1
+# ACCOUNT_CURRENCY = "USD"
 
 # class Responsemessage(BaseModel):
 #     topic: str
@@ -61,34 +46,23 @@ parser = PydanticOutputParser(pydantic_object=Tradesignal)
 
 prompt = ChatPromptTemplate.from_messages([
     ("system", """
-    You are a professional forex trading assistant.
+    You are a forex data assistant.
 
-    Use tools (price + RSI) to analyze market.
+    Your job:
+    - Use tools to get latest PRICE and RSI
+    - Return BOTH values clearly
 
     Rules:
-    - RSI > 60 → BUY
-    - RSI < 40 → SELL
-    - Otherwise → NO TRADE
-    - Risk reward must be >= 1.5
-     
-     If user explicitly asks for relaxed conditions,
-    you may use:
-    - RSI > 55 → BUY
-    - RSI < 45 → SELL
+    - DO NOT make trading decisions
+    - DO NOT suggest BUY/SELL
+    - DO NOT calculate stop loss or take profit
 
-    If there is NO TRADE, return exactly:
-    NO TRADE
+    Output format MUST be:
+    PRICE:<value>
+    RSI:<value>
 
-    If there is a valid trade, return ONLY JSON:
-    {{
-    "pair": "...",
-    "bias": "BUY or SELL",
-    "entry": float,
-    "stop_loss": float,
-    "take_profit": float,
-    "risk_reward": float,
-    "confidence": float
-    }}
+    If data is unavailable, return:
+    ERROR
     """),
     ("placeholder","{chat_history}"),
     ("human","{query}"),
@@ -107,56 +81,89 @@ agent_executor = AgentExecutor(
     verbose=True
     )
 
-query = input("What is on your mind? ")
+# query = input("What is on your mind? ")
+run_scanner(agent_executor)
+
+"""news = get_market_news()
+pairs = extract_pairs_from_news(news)
+print("News -based pairs:", pairs)
+
+for symbol in pairs:
+    query = f"Get the latest price and RSI for {symbol}"
+
 raw_response = agent_executor.invoke({"query": query})
 # print(raw_response)
+output_chunks = raw_response.get("output")
+full_text = ""
 
-try:
-    output_chunks = raw_response.get("output")
-    if isinstance(output_chunks, list):
-        full_text = ""
-        for chunk in output_chunks:
-            if isinstance(chunk, dict) and "text" in chunk:
-                full_text += chunk["text"]
-            elif isinstance(chunk, str):
-                full_text += chunk
-    elif isinstance(output_chunks, str):
-        full_text = output_chunks
-    else:
-        raise ValueError("Unexpected output format")
+for chunk in output_chunks:
+    if isinstance(chunk, dict) and "text" in chunk:
+        full_text += chunk["text"]
     
-    cleaned = re.sub(r"```json|```","", full_text).strip()
+print("Raw output:\n",full_text)
 
-    # print("Raw output:\n", cleaned)
+price, rsi = extract_values(full_text)
 
-    if "NO TRADE" in cleaned:
+if price is None or rsi is None:
+    print("Error: Failed to extract price or RSI from the response.")
+
+else:
+    symbol = detect_symbol(query)  # Extract symbol dynamically from the query
+
+    trade = decide_trade(price, rsi, symbol)
+
+    if not trade:
         print("No trade today - stay safe!")
 
     else:
-        start = cleaned.find("{")
-        end = cleaned.rfind("}") + 1
-        json_text = cleaned[start:end]
+        print("Final Trade:\n", trade)"""
 
-        print("Extracted JSON:", json_text)
+    
 
-        structured_response = parser.parse(json_text)
-        # structured_response = parser.parse(raw_response.get("output")[safest tra0]["text"])
-        position_size = calculate_position_size(
-            ACCOUNT_BALANCE,
-            RISK_PERCENT,
-            structured_response.entry,
-            structured_response.stop_loss,
-            structured_response.pair
-            )
-        structured_response.position_size = position_size
-        structured_response.risk_percent = RISK_PERCENT
-        structured_response.account_currency = ACCOUNT_CURRENCY
+# try:
+#     output_chunks = raw_response.get("output")
+#     if isinstance(output_chunks, list):
+#         full_text = ""
+#         for chunk in output_chunks:
+#             if isinstance(chunk, dict) and "text" in chunk:
+#                 full_text += chunk["text"]
+#             elif isinstance(chunk, str):
+#                 full_text += chunk
+#     elif isinstance(output_chunks, str):
+#         full_text = output_chunks
+#     else:
+#         raise ValueError("Unexpected output format")
+    
+#     cleaned = re.sub(r"```json|```","", full_text).strip()
 
-        print("\n Final Trade:\n ", structured_response)
+#     # print("Raw output:\n", cleaned)
+
+#     if "NO TRADE" in cleaned:
+#         print("No trade today - stay safe!")
+
+#     else:
+#         start = cleaned.find("{")
+#         end = cleaned.rfind("}") + 1
+#         json_text = cleaned[start:end]
+
+#         print("Extracted JSON:", json_text)
+
+#         structured_response = parser.parse(json_text)
+#         # structured_response = parser.parse(raw_response.get("output")[safest tra0]["text"])
+#         position_size = calculate_position_size(
+#             ACCOUNT_BALANCE,
+#             RISK_PERCENT,
+#             structured_response.entry,
+#             structured_response.stop_loss,
+#             structured_response.pair
+#             )
+#         structured_response.position_size = position_size
+#         structured_response.risk_percent = RISK_PERCENT
+#         structured_response.account_currency = ACCOUNT_CURRENCY
+
+#         print("\n Final Trade:\n ", structured_response)
             
 
-except Exception as e:
-    print("Failed to parse response:", e)
+# except Exception as e:
+#     print("Failed to parse response:", e)
     
-# response = llm3.invoke("what is the meaning of life?")
-# print(response.content)
