@@ -3,9 +3,12 @@ from langchain_community.utilities import WikipediaAPIWrapper
 from langchain.tools import tool
 from datetime import datetime
 import time
+from colorama import Fore, Style, init
+import winsound
 import yfinance as yf
 import pandas as pd
 import re
+init(autoreset=True)
 
 search = DuckDuckGoSearchRun()
 
@@ -90,23 +93,26 @@ def extract_values(text):
 
     return price, rsi
 
-def decide_trade(price, rsi,symbol):
+def decide_trade(price, rsi,symbol,atr):
     if rsi is None:
-        return "NO TRADE"
-    elif rsi > 55:
-        bias = "BUY"
-    elif rsi < 45:
-        bias = "SELL"
+        return "NO TRADE, STAY SAFE!"
+    elif rsi > 60:
+        bias = "BUY 🐂"
+    elif rsi < 40:
+        bias = "SELL 🐻"
     else:
-        return "NO TRADE"
+        return " 💀 NO TRADE, STAY SAFE!"
+    
+    sl_distance = atr * 1.5
+    tp_distance = sl_distance * 2
     
     if bias == "BUY":
-        stop_loss = price - 0.0030
-        take_profit = price + 0.0060
+        stop_loss = price - sl_distance
+        take_profit = price + tp_distance
 
     else:
-        stop_loss = price + 0.0030
-        take_profit = price - 0.0060
+        stop_loss = price + sl_distance
+        take_profit = price - tp_distance
 
     return {
         "pair": symbol,
@@ -114,7 +120,7 @@ def decide_trade(price, rsi,symbol):
         "entry": round(price, 5),
         "take_profit": round(take_profit, 5),
         "stop_loss": round(stop_loss, 5),
-        "risk_reward": 2.0,
+        "risk_reward": 2,
         "confidence": 0.8
     }
 def detect_symbol(query):
@@ -141,7 +147,9 @@ def analyse_symbol(symbol,agent_executor):
             full_text += chunk["text"]
     
     price, rsi = extract_values(full_text)
-    trade = decide_trade(price, rsi, symbol)
+    data = yf.download(symbol, period="5d", interval="5m")
+    atr = calculated_atr(data)
+    trade = decide_trade(price, rsi, symbol, atr)
 
     if not trade:
         print(f"No trade for {symbol} - stay safe!")
@@ -153,9 +161,22 @@ def analyse_symbol(symbol,agent_executor):
     # trade["account_currency"] = ACCOUNT_CURRENCY
     return trade
 
+def calculated_atr(data, period=14):
+    hight_low = data['High'] - data['Low']
+    high_close = abs(data['High'] - data['Close'].shift())
+    low_close = abs(data['Low'] - data['Close'].shift())
+    true_range = pd.concat([hight_low, high_close, low_close], axis=1).max(axis=1)
+    atr = true_range.rolling(window=period).mean()
+    return float(atr.iloc[-1])
+
 def send_alert(trade):
     # Placeholder for sending trade alert to Telegram or other platforms
+    if not isinstance(trade, dict):
+        print("Invalid trade format:", trade)
+        return
+    
     print("\n🚨 TRADE ALERT 🚨")
+    winsound.Beep(1000, 500)  # Beep sound (frequency, duration)
     print(f"Pair: {trade['pair']}")
     print(f"Bias: {trade['bias']}")
     print(f"Entry: {trade['entry']}")
@@ -170,6 +191,9 @@ def run_scanner(agent_executor):
     while True:
         print("\n🔍 Fetching news...")
         news = get_market_news()
+        print("=" * 50)
+        print(Fore.LIGHTRED_EX + "Latest news:\n", Fore.BLUE+ news)
+        print("=" * 50)
         pairs = extract_pairs_from_news(news)
         print("News-based pairs:", pairs)
 
@@ -181,7 +205,7 @@ def run_scanner(agent_executor):
                 print(f"No trade for {symbol} - stay safe!")
 
         print("Waiting for the next scan...")
-        time.sleep(300)  # Wait for 5 minutes before the next scan
+        time.sleep(120)  # Wait for 2 minutes before the next scan
 
 # def calculate_position_size(account_balance, risk_percent, entry, stop_loss,pair):
 #     risk_amount = account_balance * (risk_percent / 100)

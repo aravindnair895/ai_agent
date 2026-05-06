@@ -1,37 +1,82 @@
-# 🤖 AI Trading Agent
+# AI Forex Trading Scanner
 
-An AI-powered trading assistant that analyzes market data and generates trade ideas (e.g., EUR/USD) using automated tools and LLM-based reasoning.
+An automated AI-powered forex market scanner built using Python, LangChain, Gemini, and Yahoo Finance.
 
----
-
-## 🚀 Features
-
-* 📊 Fetches real-time or historical market data
-* 🧠 Analyzes trends and patterns
-* 💡 Generates trade ideas (buy/sell, entry, SL/TP)
-* 🔧 Modular tool-based architecture
-* ⚡ Built for extensibility (RAG, strategies, etc.)
+The system continuously:
+- Fetches forex market news
+- Detects relevant currency pairs
+- Retrieves live market price data
+- Calculates RSI and ATR indicators
+- Generates trade signals automatically
+- Sends trade alerts in real time
 
 ---
 
-## 🛠️ Tech Stack
+# Features
 
-* Python
-* LangChain (or your agent framework)
-* yfinance
-* dotenv (for secure API key handling)
+## Automated News-Based Scanning
+The bot fetches forex-related news and automatically determines which currency pairs are relevant.
+
+Example:
+- EUR news → EUR/USD
+- JPY news → USD/JPY
 
 ---
 
-## 📁 Project Structure
+## Multi-Pair Forex Analysis
+Currently supported:
+- EUR/USD
+- GBP/USD
+- USD/JPY
+- USD/INR
 
-```
-ai_agent/
-├── main.py              # Entry point
-├── tools.py             # Custom tools (data fetching, analysis)
-├── requirements.txt     # Dependencies
-├── .env                 # secret data (API keys)
-├── .gitignore
+The architecture can easily be extended to support more forex pairs.
+
+---
+
+## Technical Indicators
+
+### RSI (Relative Strength Index)
+Used for trade direction filtering.
+
+Rules:
+- RSI > 60 → BUY
+- RSI < 40 → SELL
+- Otherwise → NO TRADE
+
+---
+
+### ATR (Average True Range)
+Used for dynamic stop loss and take profit calculations based on market volatility.
+
+Benefits:
+- Adaptive risk management
+- Volatility-aware trades
+- More realistic trading behavior
+
+---
+
+## Risk Management
+
+The system currently uses:
+- Dynamic ATR-based Stop Loss
+- 1:2 Risk-to-Reward Ratio
+
+Example:
+- Risk: 10 pips
+- Reward: 20 pips
+
+---
+
+# Project Structure
+
+```bash
+ai-agent/
+│
+├── main.py          # Main application runner
+├── tools.py         # Trading logic + utilities
+├── .env             # API keys
+├── requirements.txt
 └── README.md
 ```
 
