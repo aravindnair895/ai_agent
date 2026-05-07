@@ -94,21 +94,31 @@ def extract_values(text):
     return price, rsi
 
 def decide_trade(price, rsi,symbol,atr):
-    if rsi is None:
+    if price is None or rsi is None or atr is None:
         return "💀 NO TRADE, STAY SAFE!"
-    elif rsi > 60:
+    
+    atr = abs(float(atr))
+
+    if rsi > 60:
         bias = "BUY 🐂"
     elif rsi < 40:
         bias = "SELL 🐻"
     else:
         return " 💀 NO TRADE, STAY SAFE!"
     
-    sl_distance = atr * 1.5
+    if "JPY" in symbol:
+        sl_distance = max(atr * 1.2, 0.10)
+    else:
+        sl_distance = max(atr * 1.2, 0.0010)
+
     tp_distance = sl_distance * 2
     
     if bias == "BUY":
         stop_loss = price - sl_distance
         take_profit = price + tp_distance
+
+        if not (stop_loss < price < take_profit):
+            return "💀 NO TRADE, STAY SAFE!"
 
     else:
         stop_loss = price + sl_distance
@@ -121,7 +131,7 @@ def decide_trade(price, rsi,symbol,atr):
         "take_profit": round(take_profit, 5),
         "stop_loss": round(stop_loss, 5),
         "risk_reward": 2,
-        "confidence": 0.8
+        "confidence": round(min(abs(rsi - 50) / 50, 1.0), 2)
     }
 def detect_symbol(query):
     query = query.lower()
