@@ -120,7 +120,7 @@ def decide_trade(price, rsi,symbol,atr):
     print("SL DISTANCE:", sl_distance)
     print("TP DISTANCE:", tp_distance)
     
-    if bias == "BUY":
+    if bias == "BUY 🐂":
         stop_loss = price - abs(sl_distance)
         take_profit = price + abs(tp_distance)
 
