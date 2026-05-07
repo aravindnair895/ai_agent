@@ -109,7 +109,6 @@ def decide_trade(price, rsi,symbol,atr):
     
     print("ATR:", atr)
     print("PRICE:", price)
-    print("BIAS:", bias)
     
     if "JPY" in symbol:
         sl_distance = max(atr * 1.2, 0.10)
@@ -117,17 +116,20 @@ def decide_trade(price, rsi,symbol,atr):
         sl_distance = max(atr * 1.2, 0.0010)
 
     tp_distance = sl_distance * 2
+
+    print("SL DISTANCE:", sl_distance)
+    print("TP DISTANCE:", tp_distance)
     
     if bias == "BUY":
-        stop_loss = price - sl_distance
-        take_profit = price + tp_distance
+        stop_loss = price - abs(sl_distance)
+        take_profit = price + abs(tp_distance)
 
         if not (stop_loss < price < take_profit):
             return "💀 NO TRADE, STAY SAFE!"
 
     else:
-        stop_loss = price + sl_distance
-        take_profit = price - tp_distance
+        stop_loss = price + abs(sl_distance)
+        take_profit = price - abs(tp_distance)
 
         if not (take_profit < price < stop_loss):
             return "💀 NO TRADE, STAY SAFE!"
