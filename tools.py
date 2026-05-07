@@ -95,7 +95,7 @@ def extract_values(text):
 
 def decide_trade(price, rsi,symbol,atr):
     if rsi is None:
-        return "NO TRADE, STAY SAFE!"
+        return "💀 NO TRADE, STAY SAFE!"
     elif rsi > 60:
         bias = "BUY 🐂"
     elif rsi < 40:
