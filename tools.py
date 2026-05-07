@@ -115,7 +115,7 @@ def decide_trade(price, rsi,symbol,atr):
     else:
         sl_distance = max(atr * 1.2, 0.0010)
 
-    tp_distance = sl_distance * 2
+    tp_distance = sl_distance * 2 # Risk/Reward ratio of 1:2
 
     print("SL DISTANCE:", sl_distance)
     print("TP DISTANCE:", tp_distance)
