@@ -35,8 +35,8 @@ class Tradesignal(BaseModel):
 
 # llm = ChatAnthropic(model="claude-3-5-sonnet-20241022")
 # llm2 = ChatOpenAI()
-# llm3 = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview")
-llm3 = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
+llm3 = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview")
+# llm3 = ChatGoogleGenerativeAI(model="gemini-2.5-flash")
 
 parser = PydanticOutputParser(pydantic_object=Tradesignal)
 

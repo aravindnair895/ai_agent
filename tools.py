@@ -94,6 +94,7 @@ def extract_values(text):
     return price, rsi
 
 def decide_trade(price, rsi,symbol,atr):
+    
     if price is None or rsi is None or atr is None:
         return "💀 NO TRADE, STAY SAFE!"
     
@@ -105,6 +106,10 @@ def decide_trade(price, rsi,symbol,atr):
         bias = "SELL 🐻"
     else:
         return " 💀 NO TRADE, STAY SAFE!"
+    
+    print("ATR:", atr)
+    print("PRICE:", price)
+    print("BIAS:", bias)
     
     if "JPY" in symbol:
         sl_distance = max(atr * 1.2, 0.10)
@@ -123,6 +128,9 @@ def decide_trade(price, rsi,symbol,atr):
     else:
         stop_loss = price + sl_distance
         take_profit = price - tp_distance
+
+        if not (take_profit < price < stop_loss):
+            return "💀 NO TRADE, STAY SAFE!"
 
     return {
         "pair": symbol,
@@ -172,12 +180,39 @@ def analyse_symbol(symbol,agent_executor):
     return trade
 
 def calculated_atr(data, period=14):
-    hight_low = data['High'] - data['Low']
-    high_close = abs(data['High'] - data['Close'].shift())
-    low_close = abs(data['Low'] - data['Close'].shift())
-    true_range = pd.concat([hight_low, high_close, low_close], axis=1).max(axis=1)
-    atr = true_range.rolling(window=period).mean()
-    return float(atr.iloc[-1])
+    high = data['High']
+    low = data['Low']
+    close = data['Close']
+
+    # Handle yfinance multi-index columns
+    if hasattr(high, "columns"):
+        high = high.iloc[:, 0]
+
+    if hasattr(low, "columns"):
+        low = low.iloc[:, 0]
+
+    if hasattr(close, "columns"):
+        close = close.iloc[:, 0]
+
+    high_low = high - low
+
+    high_close = abs(high - close.shift())
+
+    low_close = abs(low - close.shift())
+
+    true_range = pd.concat([high_low, high_close, low_close],axis=1).max(axis=1)
+
+    atr = true_range.rolling(period).mean()
+
+    latest_atr = atr.iloc[-1]
+
+    return abs(float(latest_atr))
+    # hight_low = data['High'] - data['Low']
+    # high_close = abs(data['High'] - data['Close'].shift())
+    # low_close = abs(data['Low'] - data['Close'].shift())
+    # true_range = pd.concat([hight_low, high_close, low_close], axis=1).max(axis=1)
+    # atr = true_range.rolling(window=period).mean()
+    # return float(atr.iloc[-1])
 
 def send_alert(trade):
     # Placeholder for sending trade alert to Telegram or other platforms
