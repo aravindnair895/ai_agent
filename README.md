@@ -123,18 +123,6 @@ python main.py
 
 ---
 
-## 📌 Example Use Case
-
-```
-Input: "Give me a EUR/USD trade idea"
-Output: 
-- Bias: Bullish
-- Entry: 1.08
-- Stop Loss: 1.075
-- Take Profit: 1.09
-```
-
----
 
 ## 🔒 Security Note
 
